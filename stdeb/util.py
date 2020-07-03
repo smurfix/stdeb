@@ -25,10 +25,10 @@ __all__ = ['DebianInfo','build_dsc','expand_tarball','expand_zip',
            'apply_patch','repack_tarball_with_debianized_dirname',
            'expand_sdist_file','stdeb_cfg_options']
 
-DH_MIN_VERS = '7'       # Fundamental to stdeb >= 0.4
-DH_IDEAL_VERS = '7.4.3' # fixes Debian bug 548392
+DH_MIN_VERS = '9'             # Version in Jessie (oldoldstable as of 2020-07)
+DH_IDEAL_VERS = '9.20150101'  # latest 9.x version as of 2020.07
 
-PYTHON_ALL_MIN_VERS = '2.6.6-3'
+PYTHON_ALL_MIN_VERS = '2.7.9-1'
 
 try:
     # Python 2.x
@@ -694,6 +694,7 @@ class DebianInfo:
                  has_ext_modules=NotGiven,
                  description=NotGiven,
                  long_description=NotGiven,
+                 homepage=NotGiven,
                  patch_file=None,
                  patch_level=None,
                  setup_requires=None,
@@ -795,7 +796,7 @@ class DebianInfo:
         self.uploaders = parse_vals(cfg,module_name,'Uploaders')
         self.date822 = get_date_822()
 
-        build_deps = []
+        build_deps = ['dh-python']
         if use_setuptools:
             if with_python2:
                 build_deps.append('python-setuptools (>= 0.6b3)')
@@ -927,6 +928,9 @@ class DebianInfo:
         if len(x_python3_version)!=0:
             self.source_stanza_extras += ('X-Python3-Version: '+
                                           ', '.join(x_python3_version)+'\n')
+
+        if homepage not in ('UNKNOWN', NotGiven):
+            self.source_stanza_extras += "Homepage: %s\n" % homepage
 
         dpkg_shlibdeps_params = parse_val(
             cfg,module_name,'dpkg-shlibdeps-params')
@@ -1078,36 +1082,10 @@ class DebianInfo:
         else:
             self.install_prefix = ''
 
-        rules_override_clean_target_pythons = []
-        rules_override_build_target_pythons = []
-        rules_override_install_target_pythons = []
-        if with_python2:
-            rules_override_clean_target_pythons.append(
-                RULES_OVERRIDE_CLEAN_TARGET_PY2%self.__dict__
-                )
-            rules_override_build_target_pythons.append(
-                RULES_OVERRIDE_BUILD_TARGET_PY2%self.__dict__
-                )
-            rules_override_install_target_pythons.append(
-                RULES_OVERRIDE_INSTALL_TARGET_PY2%self.__dict__
-                )
-        if with_python3:
-            rules_override_clean_target_pythons.append(
-                RULES_OVERRIDE_CLEAN_TARGET_PY3%self.__dict__
-                )
-            rules_override_build_target_pythons.append(
-                RULES_OVERRIDE_BUILD_TARGET_PY3%self.__dict__
-                )
-            rules_override_install_target_pythons.append(
-                RULES_OVERRIDE_INSTALL_TARGET_PY3%self.__dict__
-                )
-        self.rules_override_clean_target_pythons = '\n'.join(rules_override_clean_target_pythons)
-        self.rules_override_build_target_pythons = '\n'.join(rules_override_build_target_pythons)
-        self.rules_override_install_target_pythons = '\n'.join(rules_override_install_target_pythons)
-
-        self.override_dh_auto_clean = RULES_OVERRIDE_CLEAN_TARGET%self.__dict__
-        self.override_dh_auto_build = RULES_OVERRIDE_BUILD_TARGET%self.__dict__
-        self.override_dh_auto_install = RULES_OVERRIDE_INSTALL_TARGET%self.__dict__
+        if self.scripts_cleanup:
+            self.override_dh_auto_install = RULES_OVERRIDE_INSTALL_TARGET%self.__dict__
+        else:
+            self.override_dh_auto_install = ''
 
         scripts = ''
         if with_python2 and python2_depends_name:
@@ -1126,26 +1104,18 @@ class DebianInfo:
             version = x_python3_version[0]
             if not version.endswith('~'):
                 version += '~'
-            self.override_dh_python3 = RULES_OVERRIDE_PYTHON3%{
-                'scripts': (
-                    '        sed -i ' +
-                    '"s/\([ =]python3:any (\)>= [^)]*\()\)/\\1%s\\2/g" ' +
-                    'debian/%s.substvars') % (version, self.package3)
-            }
-        else:
-            self.override_dh_python3 = ''
 
         sequencer_options = ['--with '+','.join(sequencer_with)]
 
         if with_dh_virtualenv:
             sequencer_options.append('--with python-virtualenv')
         else:
-            sequencer_options.append('--buildsystem=python_distutils')
+            sequencer_options.append('--buildsystem=pybuild')
 
         self.sequencer_options = ' '.join(sequencer_options)
 
         setup_env_vars = parse_vals(cfg,module_name,'Setup-Env-Vars')
-        self.exports = ""
+        self.exports = "export PYBUILD_NAME=%s" % self.source
         if len(setup_env_vars):
             self.exports += '\n'
             self.exports += '#exports specified using stdeb Setup-Env-Vars:\n'
@@ -1316,6 +1286,7 @@ def build_dsc(debinfo,
     else:
         debinfo.uploaders = ''
     control = CONTROL_FILE%debinfo.__dict__
+    control = re.sub('\n{3,}', '\n\n', control)
     with codecs.open( os.path.join(debian_dir,'control'),
                       mode='w', encoding='utf-8') as fd:
         fd.write(control)
@@ -1325,6 +1296,7 @@ def build_dsc(debinfo,
     rules = RULES_MAIN%debinfo.__dict__
 
     rules = rules.replace('        ','\t')
+    rules = re.sub('\n{3,}', '\n\n', rules)
     rules_fname = os.path.join(debian_dir,'rules')
     with codecs.open( rules_fname,
                       mode='w', encoding='utf-8') as fd:
@@ -1333,7 +1305,7 @@ def build_dsc(debinfo,
 
     #    D. debian/compat
     fd = open( os.path.join(debian_dir,'compat'), mode='w')
-    fd.write('7\n')
+    fd.write(DH_MIN_VERS+'\n')
     fd.close()
 
     #    E. debian/package.mime
@@ -1378,9 +1350,13 @@ def build_dsc(debinfo,
     fd.write('3.0 (quilt)\n')
     fd.close()
 
-    fd = open( os.path.join(debian_dir,'source','options'), mode='w')
-    fd.write('extend-diff-ignore="\.egg-info$"')
-    fd.close()
+    #    K. debian/watch
+    with open(os.path.join(debian_dir, 'watch'), mode='w') as fd:
+        fd.write(('# please also check http://pypi.debian.net/{name}/watch\n'
+                  'version=3\n'
+                  'opts=uversionmangle=s/(rc|a|b|c)/~$1/ \\\n'
+                  'http://pypi.debian.net/{name}/{name}-(.+)\.(?:zip|tgz|tbz|txz|(?:tar\.(?:gz|bz2|xz)))').\
+                 format(name=debinfo.module_name))
 
     if debian_dir_only:
         return
@@ -1491,7 +1467,7 @@ Maintainer: %(maintainer)s
 %(uploaders)sSection: %(debian_section)s
 Priority: optional
 Build-Depends: %(build_depends)s
-Standards-Version: 3.9.1
+Standards-Version: 3.9.6
 %(source_stanza_extras)s
 
 %(control_py2_stanza)s
@@ -1524,42 +1500,9 @@ RULES_MAIN = """\
 %(percent_symbol)s:
         dh $@ %(sequencer_options)s
 
-%(override_dh_auto_clean)s
-
-%(override_dh_auto_build)s
-
 %(override_dh_auto_install)s
 
-%(override_dh_python2)s
-
-%(override_dh_python3)s
-
 %(binary_target_lines)s
-"""
-
-RULES_OVERRIDE_CLEAN_TARGET_PY2 = "        python setup.py clean -a"
-RULES_OVERRIDE_CLEAN_TARGET_PY3 = "        python3 setup.py clean -a"
-RULES_OVERRIDE_CLEAN_TARGET = """
-override_dh_auto_clean:
-%(rules_override_clean_target_pythons)s
-        find . -name \*.pyc -exec rm {} \;
-"""
-
-RULES_OVERRIDE_BUILD_TARGET_PY2 = "        python setup.py build --force"
-RULES_OVERRIDE_BUILD_TARGET_PY3 = "        python3 setup.py build --force"
-RULES_OVERRIDE_BUILD_TARGET = """
-override_dh_auto_build:
-%(rules_override_build_target_pythons)s
-"""
-
-RULES_OVERRIDE_INSTALL_TARGET_PY2 = "        python setup.py install --force --root=debian/%(package)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python2_scripts_cli_args)s"
-
-RULES_OVERRIDE_INSTALL_TARGET_PY3 = "        python3 setup.py install --force --root=debian/%(package3)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python3_scripts_cli_args)s"
-
-RULES_OVERRIDE_INSTALL_TARGET = """
-override_dh_auto_install:
-%(rules_override_install_target_pythons)s
-%(scripts_cleanup)s
 """
 
 RULES_OVERRIDE_PYTHON2 = """

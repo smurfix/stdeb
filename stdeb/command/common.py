@@ -94,7 +94,11 @@ class common_debian_package_command(Command):
 
         if 1:
             # set default maintainer
-            if (self.distribution.get_maintainer() != 'UNKNOWN' and
+            if os.environ.get('DEBEMAIL'):
+                guess_maintainer = "%s <%s>" % (os.environ.get('DEBFULLNAME',
+                                                               os.environ['DEBEMAIL']),
+                                                os.environ['DEBEMAIL'])
+            elif (self.distribution.get_maintainer() != 'UNKNOWN' and
                 self.distribution.get_maintainer_email() != 'UNKNOWN'):
                 guess_maintainer = "%s <%s>"%(
                     self.distribution.get_maintainer(),
@@ -208,6 +212,7 @@ class common_debian_package_command(Command):
             has_ext_modules = self.distribution.has_ext_modules(),
             description = description,
             long_description = long_description,
+            homepage = self.distribution.get_url(),
             patch_file = self.patch_file,
             patch_level = self.patch_level,
             debian_version = self.debian_version,
