@@ -1,0 +1,25 @@
+Source: stdeb
+Section: python
+Priority: optional
+Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
+Uploaders: Piotr Ożarowski <piotr@debian.org>
+Build-Depends: debhelper-compat (= 12), dh-python, python3-all
+Build-Depends-Indep: help2man, python3-requests
+Standards-Version: 3.9.6
+Homepage: https://github.com/astraw/stdeb
+XS-Python-Version: all
+Vcs-Git: https://salsa.debian.org/python-team/modules/stdeb.git
+Vcs-Browser: https://salsa.debian.org/python-team/modules/stdeb
+Testsuite: autopkgtest-pkg-python
+
+Package: python3-stdeb
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends}, debhelper-compat (= 9), python3-setuptools, python3-requests
+Recommends: apt-file, dpkg-dev, python3-all
+Suggests: python3-all-dev
+Replaces: python-stdeb (<< 0.8.5-2)
+Breaks: python-stdeb (<< 0.8.5-2)
+Description: Python to Debian source package conversion plugins for distutils
+ This package provides distutils commands to produce Debian packages from Python
+ packages. Automatic defaults are provided for the Debian package, but many
+ aspects of the resulting package can be customized via a configuration file.

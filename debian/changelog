@@ -1,0 +1,180 @@
+stdeb (0.9.1-1) unstable; urgency=medium
+
+  * New Release.
+
+ -- Matthias Urlichs <matthias@urlichs.de>  Fri, 03 Jul 2020 08:04:44 +0200
+
+stdeb (0.8.5-3) unstable; urgency=medium
+
+  * Team upload.
+  * Add Breaks+Replaces of old Python 2 package.
+
+ -- Ondřej Nový <onovy@debian.org>  Fri, 09 Aug 2019 09:29:04 +0200
+
+stdeb (0.8.5-2) unstable; urgency=medium
+
+  * Team upload.
+  * Fixed homepage (https)
+  * Fixed VCS URL (https)
+  * d/control: Set Vcs-* to salsa.debian.org
+  * d/watch: Use https protocol
+  * d/changelog: Remove trailing whitespaces
+  * Convert git repository from git-dpm to gbp layout
+  * Use debhelper-compat instead of debian/compat.
+  * Drop Python 2 support.
+  * d/rules: Use DEB_VERSION_UPSTREAM instead of dpkg-parsechangelog.
+  * Fix Python 3 support in scripts.
+  * Enable autopkgtest-pkg-python testsuite.
+  * Bump debhelper compat level to 12.
+
+ -- Ondřej Nový <onovy@debian.org>  Fri, 09 Aug 2019 08:44:36 +0200
+
+stdeb (0.8.5-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop fix_debianize_on_python3 and fix_pypi-download patches (fixed
+    upstream)
+  * Update use_pybuild_buildsystem patch (also: make sure dh-python is in
+    Build-Depends)
+  * Add patches from pull requests:
+    - add_support_for_DEBEMAIL.patch (pull request #105)
+    - add_debian_watch.patch (pull request #106)
+    - add_homepage_support.patch (based on pull request #103)
+  * debian/watch: use pypi.debian.net redirector
+  * Standards-Version bumped to 3.9.6 (no changes needed)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sun, 02 Aug 2015 20:35:47 +0200
+
+stdeb (0.8.2-4) unstable; urgency=medium
+
+  * Team upload.
+  * Add python/python3-requests to Depends (Closes: #767308)
+    - Thanks to Jordan Metzmeier for the fix
+
+ -- Scott Kitterman <scott@kitterman.com>  Wed, 12 Nov 2014 01:20:49 -0500
+
+stdeb (0.8.2-3) unstable; urgency=medium
+
+  * Add python-requests to the Build-Depends-Indep
+    (closes: 759981, thanks to Jordan Metzmeier)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sun, 21 Sep 2014 19:30:02 +0200
+
+stdeb (0.8.2-2) unstable; urgency=medium
+
+  * Fix binary packages' description (python-steb ←→ python3-stdeb)
+  * Add fix_debianize_on_python3 patch
+  * Add bump_debian_compat_to_9 patch
+  * Add use_pybuild_buildsystem patch
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sat, 30 Aug 2014 09:03:18 -0700
+
+stdeb (0.8.2-1) unstable; urgency=medium
+
+  * New upstream release
+  * Remove patches - all applied upstream
+  * Add python3-stdeb binary package
+  * Generate manpages for new scripts: py2dsc-deb and pypi-download
+  * Bump debhelper compat level to 9
+  * Move DPMT to Maintainer field (closes: #739233)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Thu, 28 Aug 2014 17:18:22 -0700
+
+stdeb (0.6.0+20100620-5) unstable; urgency=high
+
+  * Team Upload
+
+  [ Paul Tagliamonte ]
+  * Fix PyPi URL due to python.org site changes.
+    See https://github.com/astraw/stdeb/pull/72/files for more information.
+    (Closes: #744097). Thanks to Asheesh for the bug & in-person prod.
+
+ -- Paul Tagliamonte <paultag@debian.org>  Sat, 12 Apr 2014 13:34:16 -0400
+
+stdeb (0.6.0+20100620-4) unstable; urgency=low
+
+  * Team upload.
+
+  [ Jakub Wilk ]
+  * Use canonical URIs for Vcs-* fields.
+
+  [ Luke Faraone ]
+  * Ignore .egg-info files when building debian packages.  Thanks to Arnaud
+    Fontaine and Diane Trout for the fix. (closes: #657611, LP: #1098366)
+  * Standards-Version bumped to 3.9.5 (no changes needed)
+
+ -- Luke Faraone <lfaraone@debian.org>  Thu, 12 Dec 2013 12:18:55 -0500
+
+stdeb (0.6.0+20100620-2) unstable; urgency=low
+
+  * Do not add "Breaks: ${python:Breaks}" to generated debian/control anymore
+  * Add replace_underscore_with_a_dash_in_package_names patch
+    (binary package name for vim_bridge should be python-vim-bridge, not
+    python-vimbridge)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sat, 07 May 2011 21:56:33 +0200
+
+stdeb (0.6.0+20100620-1) unstable; urgency=low
+
+  * New upstream snapshot
+  * New patches:
+    - remove-pycentral-options (closes: #597137)
+    - pass-buildsystem-to-the-sequencer-rather-than-to-DH_OPTIONS
+      (closes: #597128)
+    - do-not-reset-environment-options-in-debian-rules
+    - replace-tabs-with-spaces
+    - use-dh_python2-instead-of-dh_pysupport
+    - change-default-source-package-format-to-3.0-quilt
+    - adjust-debian-control-template-to-latest-changes-in-policy
+  * Convert from dh_pysupport to dh_python2
+  * Add python-all to Recommends and python-all-dev to Suggests
+  * Source format changed to 3.0 (quilt)
+  * Standards-Version bumped to 3.9.1 (no changes needed)
+  * Debian packaging license now matches upstream's
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sun, 28 Nov 2010 23:49:51 +0100
+
+stdeb (0.6.0-1) unstable; urgency=low
+
+  * New upstream release
+    - do not die if sources.list does not contain deb-src lines
+      (closes: #580376)
+    - document need to call "apt-file update". Emit nicer error when user
+      needs to call "apt-file update" (closes: #568122)
+    - added {$misc:Depends} to generated depends (closes: #568692)
+  * Add debhelper to Depends
+  * Set Andrew Straw as Maintainer, move myself to Uploaders
+  * Standards-Version bumped to 3.8.4 (no changes needed)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sat, 19 Jun 2010 10:30:33 +0200
+
+stdeb (0.5.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Package's long description updated, now mentions pypi-install
+    (closes: #564562)
+  * Add README.rst to docs
+  * Add apt-file and dpkg-dev to Recommends
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sun, 10 Jan 2010 12:45:52 +0100
+
+stdeb (0.5.0-1) unstable; urgency=low
+
+  * New upstream release
+    - new command line tool: pypi-install
+    - stdeb_run_setup no longer available
+
+ -- Piotr Ożarowski <piotr@debian.org>  Thu, 31 Dec 2009 20:29:48 +0100
+
+stdeb (0.4.2-1) unstable; urgency=low
+
+  * New upstream release
+  * quilt removed from build dependencies (both patches applied upstream)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Mon, 02 Nov 2009 23:12:10 +0100
+
+stdeb (0.4.1-1) unstable; urgency=low
+
+  * Initial release (closes: #550353)
+
+ -- Piotr Ożarowski <piotr@debian.org>  Sun, 11 Oct 2009 18:13:02 +0200

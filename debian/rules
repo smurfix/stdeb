@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/pkg-info.mk
+
+export PYBUILD_NAME=stdeb
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+PYPI_DESC = downloads Python package from PyPI, creates Debian package and then installs it
+help2man = PYTHONPATH=${CURDIR} help2man -N --version-string=${DEB_VERSION_UPSTREAM} \
+		-o $1 -n '$2' $(CURDIR)/debian/python3-stdeb/usr/bin/$(subst .1,,$1)
+
+py2dsc.1:
+	$(call help2man,$@,creates Debian source package from Python package)
+
+py2dsc-deb.1:
+	$(call help2man,$@,dpkg-buildpackage wrapper that integrates with py2dsc and build binary package)
+
+pypi-install.1:
+	$(call help2man,$@,${PYPI_DESC})
+
+pypi-download.1:
+	$(call help2man,$@,downloads tarballs from PyPI)
+
+override_dh_installman: py2dsc.1 py2dsc-deb.1 pypi-install.1 pypi-download.1
+	dh_installman -p python3-stdeb py2dsc.1 py2dsc-deb.1 pypi-install.1 pypi-download.1
+
+clean:
+	rm -f py2dsc.1 pypi-install.1 py2dsc-deb.1 pypi-download.1
+	dh $@ --buildsystem=pybuild

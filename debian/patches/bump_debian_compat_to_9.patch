@@ -1,0 +1,34 @@
+From f3f70d4eba426545ceb973e498b77184bd983ec0 Mon Sep 17 00:00:00 2001
+From: SVN-Git Migration <python-modules-team@lists.alioth.debian.org>
+Date: Thu, 8 Oct 2015 14:09:57 -0700
+Subject: bump_debian_compat_to_9
+
+Patch-Name: bump_debian_compat_to_9.patch
+---
+ stdeb/util.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/stdeb/util.py b/stdeb/util.py
+index d28c104..eee3496 100644
+--- a/stdeb/util.py
++++ b/stdeb/util.py
+@@ -25,8 +25,8 @@ __all__ = ['DebianInfo','build_dsc','expand_tarball','expand_zip',
+            'apply_patch','repack_tarball_with_debianized_dirname',
+            'expand_sdist_file','stdeb_cfg_options']
+ 
+-DH_MIN_VERS = '7'       # Fundamental to stdeb >= 0.4
+-DH_IDEAL_VERS = '7.4.3' # fixes Debian bug 548392
++DH_MIN_VERS = '9'       # Fundamental to stdeb >= 0.4
++DH_IDEAL_VERS = '9'	    # required by debian/compat = 9
+ 
+ PYTHON_ALL_MIN_VERS = '2.6.6-3'
+ 
+@@ -1295,7 +1295,7 @@ def build_dsc(debinfo,
+ 
+     #    D. debian/compat
+     fd = open( os.path.join(debian_dir,'compat'), mode='w')
+-    fd.write('7\n')
++    fd.write('9\n')
+     fd.close()
+ 
+     #    E. debian/package.mime

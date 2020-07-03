@@ -1,0 +1,30 @@
+From faebe322f81c229c3682063e50674911cd932bc9 Mon Sep 17 00:00:00 2001
+From: SVN-Git Migration <python-modules-team@lists.alioth.debian.org>
+Date: Thu, 8 Oct 2015 14:09:58 -0700
+Subject: remove_newlines
+
+Patch-Name: remove_newlines.patch
+---
+ stdeb/util.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/stdeb/util.py b/stdeb/util.py
+index eee3496..f434e76 100644
+--- a/stdeb/util.py
++++ b/stdeb/util.py
+@@ -1278,6 +1278,7 @@ def build_dsc(debinfo,
+     else:
+         debinfo.uploaders = ''
+     control = CONTROL_FILE%debinfo.__dict__
++    control = re.sub('\n{3,}', '\n\n', control)
+     with codecs.open( os.path.join(debian_dir,'control'),
+                       mode='w', encoding='utf-8') as fd:
+         fd.write(control)
+@@ -1287,6 +1288,7 @@ def build_dsc(debinfo,
+     rules = RULES_MAIN%debinfo.__dict__
+ 
+     rules = rules.replace('        ','\t')
++    rules = re.sub('\n{3,}', '\n\n', rules)
+     rules_fname = os.path.join(debian_dir,'rules')
+     with codecs.open( rules_fname,
+                       mode='w', encoding='utf-8') as fd:

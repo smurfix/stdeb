@@ -1,0 +1,23 @@
+From ff10485de9c31838c05ddea9914c971ad14d5a92 Mon Sep 17 00:00:00 2001
+From: SVN-Git Migration <python-modules-team@lists.alioth.debian.org>
+Date: Thu, 8 Oct 2015 14:10:00 -0700
+Subject: bump_standards-version
+
+Patch-Name: bump_standards-version.patch
+---
+ stdeb/util.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/stdeb/util.py b/stdeb/util.py
+index fec729e..654a423 100644
+--- a/stdeb/util.py
++++ b/stdeb/util.py
+@@ -1406,7 +1406,7 @@ Maintainer: %(maintainer)s
+ %(uploaders)sSection: %(debian_section)s
+ Priority: optional
+ Build-Depends: %(build_depends)s
+-Standards-Version: 3.9.1
++Standards-Version: 3.9.6
+ %(source_stanza_extras)s
+ 
+ %(control_py2_stanza)s
