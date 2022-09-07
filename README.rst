@@ -4,8 +4,6 @@
 stdeb - Python to Debian source package conversion utility
 ==========================================================
 
-**Looking for maintainers.** See discussion `here <https://github.com/astraw/stdeb/issues/125>`_.
-
 `stdeb <http://github.com/astraw/stdeb>`_ produces Debian source
 packages from Python packages via a new distutils command,
 ``sdist_dsc``. Automatic defaults are provided for the Debian package,
@@ -53,6 +51,28 @@ interpreter (and only the Python3 package installs scripts)::
 
 News
 ----
+
+ * 2020-10-28: **Version 0.10.0**. See the `download page
+   <https://pypi.python.org/pypi/stdeb/0.10.0>`__.
+
+  * Bugfixes:
+
+    * add sleep between PyPI API calls to avoid rate limit (#173)
+
+  * Improvements:
+
+    * use SOURCE_DATE_EPOCH if set for timestamp in generated changelog to
+      generate reproducbile artifacts (#166)
+    * update debhelper compat version from 7 to 9 (#158)
+    * added flag --with-dh-systemd (#162)
+    * add support for DEBEMAIL envvar (#168)
+    * use setuptools "url" field for "Homepage" field in debian/control (#169)
+    * dh_virtualenv: specify Python version (#165)
+    * added compat flag to modify Debian compatibility level (#163)
+
+  * Cosmetic:
+    * remove excess newlines from debian/control and rules file (#167)
+    * use flake8 to check style in Travis CI, update code to comply (#171)
 
  * 2020-06-11: **Version 0.9.1**. See the `download page
    <https://pypi.python.org/pypi/stdeb/0.9.1>`__.
@@ -478,10 +498,10 @@ to install a more recent stdeb.
 
 ::
 
-  STDEB_VERSION="0.9.1"
+  STDEB_VERSION="0.10.0"
 
   # Download stdeb
-  wget http://pypi.python.org/packages/source/s/stdeb/stdeb-$STDEB_VERSION.tar.gz
+  wget https://pypi.python.org/packages/source/s/stdeb/stdeb-$STDEB_VERSION.tar.gz
 
   # Extract it
   tar xzf stdeb-$STDEB_VERSION.tar.gz
@@ -598,6 +618,8 @@ To pass these commands to sdist_dsc when calling bdist_deb, do this::
                                        /some/random/virtualenv-path
   --with-dh-virtualenv                 Build the package using dh_virtualenv, so all dependencies
                                        are embedded into the packages.
+  --with-dh-systemd                    Add the systemd addon that will add dh_systemd_enable and
+                                       dh_systemd_start helpers at the correct time during build.
   --sign-results                       Use gpg to sign the resulting .dsc and
                                        .changes file
   --dist-dir (-d)                      directory to put final built
@@ -605,6 +627,7 @@ To pass these commands to sdist_dsc when calling bdist_deb, do this::
   --patch-already-applied (-a)         patch was already applied (used when
                                        py2dsc calls sdist_dsc)
   --default-distribution               deprecated (see --suite)
+  --compat                             debian compatibility level (default=9)
   --suite (-z)                         distribution name to use if not
                                        specified in .cfg (default='unstable')
   --default-maintainer                 deprecated (see --maintainer)
@@ -758,6 +781,20 @@ All available options:
 ====================================== =========================================
 
 The option names in stdeb.cfg files are not case sensitive.
+
+Reproducible builds
+-------------------
+
+By default stdeb uses the current time for the the timestamp in the generated
+changelog file. This results in a non-reproducible build since every invocation
+generates a different changelog / ``.deb``.
+The environment variable ``SOURCE_DATE_EPOCH`` can be set to a fixed timestamp
+(e.g. when the version was tagged or of the last commit was made) which will be
+used in the changelog instead. This will ensure that the produced ``.deb`` is
+reproducible on repeated invocations.
+
+For more information about reproducible builds and this specific environment
+variable please see https://reproducible-builds.org/docs/source-date-epoch/
 
 Prerequisites
 -------------
