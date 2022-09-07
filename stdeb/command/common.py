@@ -207,7 +207,6 @@ class common_debian_package_command(Command):
             patch_file=self.patch_file,
             patch_level=self.patch_level,
             debian_version=self.debian_version,
-            have_script_entry_points = have_script_entry_points,
             setup_requires=(),  # XXX How do we get the setup_requires?
             use_setuptools=use_setuptools,
             guess_conflicts_provides_replaces=(
