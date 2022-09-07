@@ -1,0 +1,6 @@
+/*-stamp
+/python3-stdeb/
+/*.log
+/*.debhelper
+/*.substvars
+/files

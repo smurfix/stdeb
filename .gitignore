@@ -1,3 +1,5 @@
+/.pybuild/
+/*.1
 build
 deb_dist
 *.pyc
