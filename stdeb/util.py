@@ -954,9 +954,6 @@ class DebianInfo:
 
         self.source_stanza_extras = ''
 
-        if homepage != 'UNKNOWN':
-            self.source_stanza_extras += 'Homepage: %s\n' % homepage
-
         build_conflicts = parse_vals(cfg, module_name, 'Build-Conflicts')
         if len(build_conflicts):
             self.source_stanza_extras += ('Build-Conflicts: ' +
@@ -1154,33 +1151,10 @@ class DebianInfo:
         else:
             self.install_prefix = ''
 
-#       if self.scripts_cleanup:
-#           self.override_dh_auto_install = RULES_OVERRIDE_INSTALL_TARGET%self.__dict__
-#       else:
-#           self.override_dh_auto_install = ''
-        rules_override_clean_target_pythons = []
-        rules_override_build_target_pythons = []
-        rules_override_install_target_pythons = []
-        if with_python2:
-            rules_override_clean_target_pythons.append(
-                RULES_OVERRIDE_CLEAN_TARGET_PY2 % self.__dict__
-                )
-            rules_override_build_target_pythons.append(
-                RULES_OVERRIDE_BUILD_TARGET_PY2 % self.__dict__
-                )
-            rules_override_install_target_pythons.append(
-                RULES_OVERRIDE_INSTALL_TARGET_PY2 % self.__dict__
-                )
-        if with_python3:
-            rules_override_clean_target_pythons.append(
-                RULES_OVERRIDE_CLEAN_TARGET_PY3 % self.__dict__
-                )
-            rules_override_build_target_pythons.append(
-                RULES_OVERRIDE_BUILD_TARGET_PY3 % self.__dict__
-                )
-            rules_override_install_target_pythons.append(
-                RULES_OVERRIDE_INSTALL_TARGET_PY3 % self.__dict__
-                )
+        if self.scripts_cleanup:
+            self.override_dh_auto_install = RULES_OVERRIDE_INSTALL_TARGET%self.__dict__
+        else:
+            self.override_dh_auto_install = ''
         self.rules_override_clean_target_pythons = \
             '\n'.join(rules_override_clean_target_pythons)
         self.rules_override_build_target_pythons = \
@@ -1233,7 +1207,7 @@ class DebianInfo:
 
             sequencer_options.append('--with python-virtualenv')
         else:
-            sequencer_options.append('--buildsystem=python_distutils')
+            sequencer_options.append('--buildsystem=pybuild')
             self.override_dh_virtualenv_py = ''
 
         if with_dh_systemd:
