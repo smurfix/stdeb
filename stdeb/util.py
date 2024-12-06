@@ -9,12 +9,7 @@ import shutil
 import sys
 import time
 import codecs
-try:
-    # Python 2.x
-    import ConfigParser
-except ImportError:
-    # Python 3.x
-    import configparser as ConfigParser
+import configparser as ConfigParser
 import subprocess
 import tempfile
 import stdeb  # noqa: F401
@@ -31,10 +26,12 @@ __all__ = ['DebianInfo', 'build_dsc', 'expand_tarball', 'expand_zip',
            'apply_patch', 'repack_tarball_with_debianized_dirname',
            'expand_sdist_file', 'stdeb_cfg_options']
 
-DH_MIN_VERS = '9'  # Fundamental to stdeb >= 0.10
-DH_DEFAULT_VERS = 9
+DH_MIN_VERS = '12'  # Fundamental to stdeb >= 0.10
+DH_DEFAULT_VERS = 12
 
-PYTHON_ALL_MIN_VERS = '2.7.9-1'
+# Choose the oldest from Debian oldoldstable and currently supported Ubuntu LTS
+PYTHON_ALL_MIN_VERS = '2.7.16-1'
+PYTHON3_ALL_MIN_VERS = '3.7.3-1'
 
 try:
     # Python 2.x
@@ -132,6 +129,8 @@ stdeb_cmdline_opts = [
      'dh_systemd_start helpers at the correct time during build.'),
     ('sign-results', None,
      'Use gpg to sign the resulting .dsc and .changes file'),
+    ('sign-key=', None,
+     'Specify signing key'),
     ('ignore-source-changes', None,
      'Ignore all changes on source when building source package (add -i.* '
      'option to dpkg-source)'),
@@ -730,7 +729,7 @@ def check_cfg_files(cfg_files, module_name):
     example.
     """
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = ConfigParser.ConfigParser()
     cfg.read(cfg_files)
     if cfg.has_section(module_name):
         section_items = cfg.items(module_name)
@@ -801,10 +800,10 @@ class DebianInfo:
         if len(cfg_files):
             check_cfg_files(cfg_files, module_name)
 
-        cfg = ConfigParser.SafeConfigParser(cfg_defaults)
+        cfg = ConfigParser.ConfigParser(cfg_defaults)
         for cfg_file in cfg_files:
             with codecs.open(cfg_file, mode='r', encoding='utf-8') as fd:
-                cfg.readfp(fd)
+                cfg.read_file(fd)
 
         if sdist_dsc_command is not None:
             # Allow distutils commands to override config files (this lets
@@ -953,9 +952,6 @@ class DebianInfo:
         recommends3 = ', '.join(parse_vals(cfg, module_name, 'Recommends3'))
 
         self.source_stanza_extras = ''
-
-        if homepage != 'UNKNOWN':
-            self.source_stanza_extras += 'Homepage: %s\n' % homepage
 
         build_conflicts = parse_vals(cfg, module_name, 'Build-Conflicts')
         if len(build_conflicts):
@@ -1117,6 +1113,14 @@ class DebianInfo:
 
         if not (with_python2 or with_python3):
             raise RuntimeError('nothing to do - neither Python 2 or 3.')
+
+        if with_python2:
+            if shutil.which("python"):
+                self.python2_binname = "python"
+            elif shutil.which("python2"):
+                self.python2_binname = "python2"
+            else:
+                raise RuntimeError("Python 2 binary not found on path as either `python` or `python2`")
         sequencer_with = []
         if with_python2:
             sequencer_with.append('python2')
@@ -1154,33 +1158,10 @@ class DebianInfo:
         else:
             self.install_prefix = ''
 
-#       if self.scripts_cleanup:
-#           self.override_dh_auto_install = RULES_OVERRIDE_INSTALL_TARGET%self.__dict__
-#       else:
-#           self.override_dh_auto_install = ''
-        rules_override_clean_target_pythons = []
-        rules_override_build_target_pythons = []
-        rules_override_install_target_pythons = []
-        if with_python2:
-            rules_override_clean_target_pythons.append(
-                RULES_OVERRIDE_CLEAN_TARGET_PY2 % self.__dict__
-                )
-            rules_override_build_target_pythons.append(
-                RULES_OVERRIDE_BUILD_TARGET_PY2 % self.__dict__
-                )
-            rules_override_install_target_pythons.append(
-                RULES_OVERRIDE_INSTALL_TARGET_PY2 % self.__dict__
-                )
-        if with_python3:
-            rules_override_clean_target_pythons.append(
-                RULES_OVERRIDE_CLEAN_TARGET_PY3 % self.__dict__
-                )
-            rules_override_build_target_pythons.append(
-                RULES_OVERRIDE_BUILD_TARGET_PY3 % self.__dict__
-                )
-            rules_override_install_target_pythons.append(
-                RULES_OVERRIDE_INSTALL_TARGET_PY3 % self.__dict__
-                )
+        if self.scripts_cleanup:
+            self.override_dh_auto_install = RULES_OVERRIDE_INSTALL_TARGET%self.__dict__
+        else:
+            self.override_dh_auto_install = ''
         self.rules_override_clean_target_pythons = \
             '\n'.join(rules_override_clean_target_pythons)
         self.rules_override_build_target_pythons = \
@@ -1233,7 +1214,7 @@ class DebianInfo:
 
             sequencer_options.append('--with python-virtualenv')
         else:
-            sequencer_options.append('--buildsystem=python_distutils')
+            sequencer_options.append('--buildsystem=pybuild')
             self.override_dh_virtualenv_py = ''
 
         if with_dh_systemd:
@@ -1343,6 +1324,7 @@ def build_dsc(debinfo,
               remove_expanded_source_dir=0,
               debian_dir_only=False,
               sign_dsc=False,
+              sign_key=None,
               ignore_source_changes=False,
               ):
     """make debian source package"""
@@ -1475,8 +1457,12 @@ def build_dsc(debinfo,
         fname = debinfo.udev_rules
         if not os.path.exists(fname):
             raise ValueError('udev rules file specified, but does not exist')
-        link_func(fname,
-                  os.path.join(debian_dir, '%s.udev' % debinfo.package))
+        if debinfo.with_python2:
+            link_func(fname,
+                      os.path.join(debian_dir, '%s.udev' % debinfo.package))
+        if debinfo.with_python3:
+            link_func(fname,
+                      os.path.join(debian_dir, '%s.udev' % debinfo.package3))
 
     #    J. debian/source/format
     os.mkdir(os.path.join(debian_dir, 'source'))
@@ -1561,6 +1547,14 @@ def build_dsc(debinfo,
             if len(python3_defaults_version_str) == 0:
                 log.warn('This version of stdeb requires python3-all, '
                          'but you do not have this package installed.')
+            else:
+                if not dpkg_compare_versions(
+                    python3_defaults_version_str, 'ge', PYTHON3_ALL_MIN_VERS
+                ):
+                    log.warn('This version of stdeb requires python-all >= '
+                             '%s. Use stdeb 0.6.0 or older to generate source '
+                             'packages that use python-support.' % (
+                                 PYTHON_ALL_MIN_VERS,))
 
     #    D. restore debianized tree
     os.rename(fullpath_repackaged_dirname+'.debianized',
@@ -1573,6 +1567,8 @@ def build_dsc(debinfo,
 
     if not sign_dsc:
         args += ['-uc', '-us']
+    elif sign_key is not None:
+        args += ['--sign-key={}'.format(sign_key)]
 
     if ignore_source_changes:
         args.append('-i.*')
@@ -1604,7 +1600,7 @@ Maintainer: %(maintainer)s
 %(uploaders)sSection: %(debian_section)s
 Priority: optional
 Build-Depends: %(build_depends)s
-Standards-Version: 3.9.6
+Standards-Version: 4.7.0
 %(source_stanza_extras)s
 
 %(control_py2_stanza)s
@@ -1648,7 +1644,7 @@ RULES_MAIN = """\
 %(binary_target_lines)s
 """
 
-RULES_OVERRIDE_CLEAN_TARGET_PY2 = "        python setup.py clean -a"
+RULES_OVERRIDE_CLEAN_TARGET_PY2 = "        %(python2_binname)s setup.py clean -a"
 RULES_OVERRIDE_CLEAN_TARGET_PY3 = "        python3 setup.py clean -a"
 RULES_OVERRIDE_CLEAN_TARGET = r"""
 override_dh_auto_clean:
@@ -1656,14 +1652,14 @@ override_dh_auto_clean:
         find . -name \*.pyc -exec rm {} \;
 """
 
-RULES_OVERRIDE_BUILD_TARGET_PY2 = "        python setup.py build --force"
+RULES_OVERRIDE_BUILD_TARGET_PY2 = "        %(python2_binname)s setup.py build --force"
 RULES_OVERRIDE_BUILD_TARGET_PY3 = "        python3 setup.py build --force"
 RULES_OVERRIDE_BUILD_TARGET = """
 override_dh_auto_build:
 %(rules_override_build_target_pythons)s
 """
 
-RULES_OVERRIDE_INSTALL_TARGET_PY2 = "        python setup.py install --force --root=debian/%(package)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python2_scripts_cli_args)s"  # noqa: E501
+RULES_OVERRIDE_INSTALL_TARGET_PY2 = "        %(python2_binname)s setup.py install --force --root=debian/%(package)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python2_scripts_cli_args)s"  # noqa: E501
 
 RULES_OVERRIDE_INSTALL_TARGET_PY3 = "        python3 setup.py install --force --root=debian/%(package3)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python3_scripts_cli_args)s"  # noqa: E501
 
