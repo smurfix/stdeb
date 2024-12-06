@@ -113,9 +113,6 @@ stdeb_cmdline_opts = [
      'If True, do not install scripts for python 2. (Default=False).'),
     ('no-python3-scripts=', None,
      'If True, do not install scripts for python 3. (Default=False).'),
-    ('force-x-python3-version', None,
-     'Override default minimum python3:any dependency with value from '
-     'x-python3-version'),
     ('allow-virtualenv-install-location', None,
      'Allow installing into /some/random/virtualenv-path'),
     ('compat=', 'c',
@@ -1158,64 +1155,11 @@ class DebianInfo:
         else:
             self.install_prefix = ''
 
-        if self.scripts_cleanup:
-            self.override_dh_auto_install = RULES_OVERRIDE_INSTALL_TARGET%self.__dict__
-        else:
-            self.override_dh_auto_install = ''
-        self.rules_override_clean_target_pythons = \
-            '\n'.join(rules_override_clean_target_pythons)
-        self.rules_override_build_target_pythons = \
-            '\n'.join(rules_override_build_target_pythons)
-        self.rules_override_install_target_pythons = \
-            '\n'.join(rules_override_install_target_pythons)
-
-        self.override_dh_auto_clean = \
-            RULES_OVERRIDE_CLEAN_TARGET % self.__dict__
-        self.override_dh_auto_build = \
-            RULES_OVERRIDE_BUILD_TARGET % self.__dict__
-        self.override_dh_auto_install = \
-            RULES_OVERRIDE_INSTALL_TARGET % self.__dict__
-
         scripts = ''
-        if with_python2 and python2_depends_name:
-            scripts = (
-                '        sed -i ' +
-                r'"s/\([ =]\)python[0-9]\?\(\(:any\)\? (\)/\\1%s\\2/g" ' +
-                'debian/%s.substvars') % (python2_depends_name, self.package)
-        self.override_dh_python2 = RULES_OVERRIDE_PYTHON2 % {
-            'scripts': scripts
-        }
-
-        if force_x_python3_version and with_python3 and x_python3_version and \
-                x_python3_version[0]:
-            # override dh_python3 target to modify the dependencies
-            # to ensure that the passed minimum X-Python3-Version is usedby
-            version = x_python3_version[0]
-            if not version.endswith('~'):
-                version += '~'
-            self.override_dh_python3 = RULES_OVERRIDE_PYTHON3 % {
-                'scripts': (
-                    '        sed -i ' +
-                    r'"s/\([ =]python3:any (\)>= [^)]*\()\)/\\1%s\\2/g" ' +
-                    'debian/%s.substvars') % (version, self.package3)
-            }
-        else:
-            self.override_dh_python3 = ''
 
         sequencer_options = ['--with '+','.join(sequencer_with)]
 
-        if with_dh_virtualenv:
-            if with_python2:
-                self.override_dh_virtualenv_py = \
-                    RULES_OVERRIDE_DH_VIRTUALENV_PY2 % self.__dict__
-            if with_python3:
-                self.override_dh_virtualenv_py = \
-                    RULES_OVERRIDE_DH_VIRTUALENV_PY3 % self.__dict__
-
-            sequencer_options.append('--with python-virtualenv')
-        else:
-            sequencer_options.append('--buildsystem=pybuild')
-            self.override_dh_virtualenv_py = ''
+        sequencer_options.append('--buildsystem=pybuild')
 
         if with_dh_systemd:
             sequencer_options.append('--with systemd')
@@ -1633,61 +1577,7 @@ RULES_MAIN = """\
 %(percent_symbol)s:
         dh $@ %(sequencer_options)s
 
-%(override_dh_auto_install)s
-
-%(override_dh_python2)s
-
-%(override_dh_python3)s
-
-%(override_dh_virtualenv_py)s
-
 %(binary_target_lines)s
-"""
-
-RULES_OVERRIDE_CLEAN_TARGET_PY2 = "        %(python2_binname)s setup.py clean -a"
-RULES_OVERRIDE_CLEAN_TARGET_PY3 = "        python3 setup.py clean -a"
-RULES_OVERRIDE_CLEAN_TARGET = r"""
-override_dh_auto_clean:
-%(rules_override_clean_target_pythons)s
-        find . -name \*.pyc -exec rm {} \;
-"""
-
-RULES_OVERRIDE_BUILD_TARGET_PY2 = "        %(python2_binname)s setup.py build --force"
-RULES_OVERRIDE_BUILD_TARGET_PY3 = "        python3 setup.py build --force"
-RULES_OVERRIDE_BUILD_TARGET = """
-override_dh_auto_build:
-%(rules_override_build_target_pythons)s
-"""
-
-RULES_OVERRIDE_INSTALL_TARGET_PY2 = "        %(python2_binname)s setup.py install --force --root=debian/%(package)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python2_scripts_cli_args)s"  # noqa: E501
-
-RULES_OVERRIDE_INSTALL_TARGET_PY3 = "        python3 setup.py install --force --root=debian/%(package3)s --no-compile -O0 --install-layout=deb %(install_prefix)s %(no_python3_scripts_cli_args)s"  # noqa: E501
-
-RULES_OVERRIDE_INSTALL_TARGET = """
-override_dh_auto_install:
-%(rules_override_install_target_pythons)s
-%(scripts_cleanup)s
-"""
-
-RULES_OVERRIDE_PYTHON2 = """
-override_dh_python2:
-        dh_python2 --no-guessing-versions
-%(scripts)s
-"""
-RULES_OVERRIDE_PYTHON3 = """
-override_dh_python3:
-        dh_python3
-%(scripts)s
-"""
-
-RULES_OVERRIDE_DH_VIRTUALENV_PY2 = """
-override_dh_virtualenv:
-        dh_virtualenv --python python2
-"""
-
-RULES_OVERRIDE_DH_VIRTUALENV_PY3 = """
-override_dh_virtualenv:
-        dh_virtualenv --python python3
 """
 
 RULES_BINARY_TARGET = """
