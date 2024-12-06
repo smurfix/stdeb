@@ -1,5 +1,5 @@
-.. image:: https://travis-ci.org/astraw/stdeb.png?branch=master
-        :target: https://travis-ci.org/astraw/stdeb
+.. image:: https://github.com/astraw/stdeb/actions/workflows/ci.yaml/badge.svg
+        :target: https://github.com/astraw/stdeb/actions/workflows/ci.yaml
 
 stdeb - Python to Debian source package conversion utility
 ==========================================================
@@ -51,6 +51,43 @@ interpreter (and only the Python3 package installs scripts)::
 
 News
 ----
+
+ * 2024-07-03: **Version 0.11.0**. See the `download page
+   <https://pypi.python.org/pypi/stdeb/0.11.0>`__.
+
+  * Breaking changes:
+
+    * remove support for running stdeb using Python 2.
+
+ * 2024-11-14: **Version 0.10.1**. See the `download page
+   <https://pypi.python.org/pypi/stdeb/0.10.1>`__.
+   This is the last planned release of stdeb which supports running stdeb
+   scripts with Python 2.7. Generating Python 2 packages with future releases
+   will be maintained on a best-effort basis. Users of stdeb's Python 2 support
+   are encouraged to report issues and provide test cases which can be added to
+   CI.
+
+  * Bugfixes:
+
+    * Fix udev rule filenames for automatic dh_installudev recognition. (#180)
+
+  * Improvements:
+
+    * The ``--sign-key`` argument can now be used to provide an alternative key
+      rather than always signing with the default key. (#187)
+
+    * Switch PyPI API usage to JSON and "Simple" APIs now that the XML-RPC API is deprecated. (#201, #202)
+
+    * Detect and use the current binary name for Python 2. (#203)
+      Ubuntu Focal and Ubuntu Jammy install a `python2` binary when the
+      `python-all-dev` package is installed. Rather than assuming that the
+      `python` binary is available and is Python 2, check for a `python` or
+      `python2` binary and use what is found. 
+
+  * Development changes:
+
+    * Continuous Integration is now run on GitHub Actions using Earthly. (#199)
+    * Use ruff for style and lint checks (currently not enforced). (#199)
 
  * 2020-10-28: **Version 0.10.0**. See the `download page
    <https://pypi.python.org/pypi/stdeb/0.10.0>`__.
@@ -412,7 +449,7 @@ Quickstart 3: I read the warning, so show me how to make a source package, then 
 
 This generates a source package::
 
-  wget http://pypi.python.org/packages/source/R/Reindent/Reindent-0.1.0.tar.gz
+  pypi-download Reindent --release=0.1.0
   py2dsc Reindent-0.1.0.tar.gz
 
 This turns it into a .deb using the standard Debian tools. (Do *this*
@@ -449,7 +486,7 @@ illustration, we do download such a tarball, but immediately unpack it
 (alternatively, use a version control system to grab the unpacked
 source of a package)::
 
-  wget http://pypi.python.org/packages/source/R/Reindent/Reindent-0.1.0.tar.gz
+  pypi-download Reindent --release=0.1.0
   tar xzf Reindent-0.1.0.tar.gz
   cd Reindent-0.1.0
 
@@ -498,10 +535,10 @@ to install a more recent stdeb.
 
 ::
 
-  STDEB_VERSION="0.10.0"
+  STDEB_VERSION="0.10.1"
 
   # Download stdeb
-  wget https://pypi.python.org/packages/source/s/stdeb/stdeb-$STDEB_VERSION.tar.gz
+  pypi-download stdeb --release=$STDEB_VERSION
 
   # Extract it
   tar xzf stdeb-$STDEB_VERSION.tar.gz
@@ -622,6 +659,7 @@ To pass these commands to sdist_dsc when calling bdist_deb, do this::
                                        dh_systemd_start helpers at the correct time during build.
   --sign-results                       Use gpg to sign the resulting .dsc and
                                        .changes file
+  --sign-key                           Specify signing key
   --dist-dir (-d)                      directory to put final built
                                        distributions in (default='deb_dist')
   --patch-already-applied (-a)         patch was already applied (used when
@@ -882,7 +920,7 @@ Additional Credits
 * kzwin for interop with virtualenv
 * GitHub_ for hosting services.
 * WebFaction_ (aka `python-hosting`_) for previous hosting services.
-* TravisCI_ for continuous integration
+* TravisCI_ for previous continuous integration support
 
 .. _GitHub: http://github.com/
 .. _WebFaction: http://webfaction.com/
